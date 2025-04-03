@@ -72,7 +72,7 @@ public class EmbeddedServer {
             new HttpConnectionFactory(httpsConfig));
 
     connector.setPort(port);
-    connector.setHost("127.0.0.1");
+    connector.setHost("0.0.0.0");
 
     ServletHolder servlet = new ServletHolder(new ServletContainer(config));
     ServletContextHandler context = new ServletContextHandler(server, "/");
