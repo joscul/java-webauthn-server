@@ -1,4 +1,5 @@
 plugins {
+  java
   war
   application
   `project-convention-java`
