@@ -7,6 +7,11 @@ plugins {
   `project-convention-code-formatting`
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 description = "WebAuthn demo"
 
 // Can't use test fixtures because they interfere with pitest: https://github.com/gradle/gradle/issues/12168
