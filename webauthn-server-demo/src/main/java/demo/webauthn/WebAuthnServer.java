@@ -95,6 +95,10 @@ import lombok.NonNull;
 import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class WebAuthnServer {
   private static final Logger logger = LoggerFactory.getLogger(WebAuthnServer.class);
@@ -432,6 +436,33 @@ public class WebAuthnServer {
       return Either.left(
           Arrays.asList("Assertion failed!", "Failed to decode response object.", e.getMessage()));
     }
+
+	System.out.println("============ CHECKING ENSURE ================");
+
+	try {
+		HttpClient ens_client = HttpClient.newBuilder()
+		.version(HttpClient.Version.HTTP_2)
+		.build();
+
+		HttpRequest ens_request = HttpRequest.newBuilder()
+			.GET()
+			.uri(URI.create("https://ensure-agent.alertsec.com/checks/temp/" + ensureId))
+			.header("Content-Type", "application/json")
+			.build();
+
+		HttpResponse<String> ens_response = ens_client.send(ens_request, HttpResponse.BodyHandlers.ofString());
+		String responseBody = ens_response.body();
+
+		boolean firewallCompliant = isFirewallCompliant(responseBody);
+		System.out.println("Firewall compliant: " + firewallCompliant);
+
+		if (!firewallCompliant) {
+			return Either.left(Arrays.asList("Assertion failed!", "Server side firewall check failed"));
+		}
+
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
 
     AssertionRequestWrapper request = assertRequestStorage.getIfPresent(response.getRequestId());
     assertRequestStorage.invalidate(response.getRequestId());

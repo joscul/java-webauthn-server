@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <link href="css/bootstrap.min.css" rel="stylesheet" media="screen"/>
   <link href="css/bootstrap-responsive.min.css" rel="stylesheet"/>
   <link href="css/bootstrap-yubico.css" rel="stylesheet"/>
+	<script type="text/javascript" src="https://v2.alertsec.com/assets/js/ensure.js"></script>
   <style type="text/css">
 
 .row {
@@ -60,6 +61,46 @@ import * as webauthnJson from "./lib/webauthn-json-0.6.1/dist/esm/webauthn-json.
 let ceremonyState = {};
 let session = {
 };
+
+async function authenticateWithEnsure(event, username) {
+
+    // Make request to the server to get the challange.
+    const { request, actions: urls } = await fetch("/api/v1/authenticate", {
+        body: new URLSearchParams({ username }),
+        method: 'POST',
+    }).then(response => response.json()).catch(error => {
+        console.error(error)
+    });
+
+    // Perform webauthn request with the publicKeyCredentialRequestOptions
+    const webauthnResponse = await webauthnJson.get({ publicKey: request.publicKeyCredentialRequestOptions });
+
+    // Run Ensure validation
+    const ensureResponse = await Ensure.run("e5437cbcad1f7fe7316179f0dd9fe2c2-62445964538fa-1938241297", username)
+
+    // Submit ensure and webauthn response to server.
+    const body = {
+        requestId: request.requestId,
+        ensureToken: ensureResponse.verification.token,
+        credential: webauthnResponse,
+        sessionToken: request.sessionToken || session.sessionToken || null,
+    };
+
+    const data = await fetch(urls.finish, {
+        method: 'POST',
+        body: JSON.stringify(body),
+    })
+        .then(response => response.json())
+        .then(updateSession)
+    ;
+
+    if (data && data.success) {
+        setStatus("Success!");
+    } else {
+        setStatus('Error!');
+    }
+    showServerResponse(data);
+}
 
 function extend(obj, more) {
   return Object.assign({}, obj, more);
@@ -382,7 +423,7 @@ function executeAuthenticateRequest(request) {
 }
 
 function authenticateWithUsername(event) {
-  return authenticate(event, document.getElementById('username').value);
+return authenticateWithEnsure(event, document.getElementById('username').value);
 }
 async function authenticate(event, username) {
   try {

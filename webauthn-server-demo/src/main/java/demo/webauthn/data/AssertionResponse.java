@@ -36,16 +36,20 @@ import lombok.Value;
 @JsonIgnoreProperties({"sessionToken"})
 public class AssertionResponse {
 
+  public final String ensureToken;
+
   private final ByteArray requestId;
   private final PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs>
       credential;
 
   public AssertionResponse(
+      @JsonProperty("ensureToken") String ensureToken,
       @JsonProperty("requestId") ByteArray requestId,
       @JsonProperty("credential")
           PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs>
               credential) {
     this.requestId = requestId;
     this.credential = credential;
+    this.ensureToken = ensureToken;
   }
 }
